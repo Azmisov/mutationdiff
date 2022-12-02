@@ -199,7 +199,7 @@ To revert the DOM back to its original state, simply call `revert`:
 
 ```js
 tracker.revert();
-console.log(tracker.mutated);
+console.log(tracker.mutated());
 // output: false
 ```
 
