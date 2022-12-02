@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html>
+<!-- <script type="module" src="../mutationdiff.mjs"></script> -->
+<script type="module">
+import { MutationDiff, MutationDiffFlags as F} from "../mutationdiff.min.mjs";
+
+// DOM: <div><span></span></div>, <span id=B></span>, #old text
+const root = document.createElement("div");
+const A = document.createElement("span");
+root.appendChild(A);
+const B = document.createElement("span");
+B.id = "B";
+const txt = document.createTextNode("old text");
+
+const tracker = new MutationDiff();
+const observer = tracker.watch(root);
+
+// Mutated DOM: <div><span id=B_modified></span>#new text<span></span></div>
+root.appendChild(B);
+root.appendChild(txt);
+A.remove();
+B.id = "B_modified";
+txt.after(A);
+txt.data = "new text";
+
+const records = observer.takeRecords();
+// optionally disconnect if we don't want to observe root anymore
+observer.disconnect();
+for (const r of records)
+	tracker.record(r);
+
+console.log(tracker.mutated());
+// output: true
+window.range = tracker.range();
+console.log(window.range);
+// output: BoundaryRange[(root, AFTER_OPEN), (A, BEFORE_OPEN)]
+console.log(tracker.diff());
+
+const grouped = Array.from(tracker.diff_grouped_children(F.MUTATED));
+console.log(grouped);
+
+</script>
+</html>

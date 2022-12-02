@@ -1,0 +1,47 @@
+{
+  "name": "mutationdiff",
+  "version": "1.0.0",
+  "description": "Incremental DOM diffing on real DOM trees utilizing MutationObserver; allows patching, reversion, or range queries",
+  "main": "mutationdiff.mjs",
+  "scripts": {
+    "docs": "jsdoc --configure docs_theme/jsdoc_config.js",
+    "bundle": "rollup --config rollup.config.mjs"
+  },
+  "browserslist": "> 0.25%, not dead",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Azmisov/mutationdiff.git"
+  },
+  "keywords": [
+    "dom",
+    "diff",
+    "MutationObserver",
+    "mutation",
+    "node",
+    "range",
+    "patch",
+    "patching",
+    "revert",
+    "frontend",
+    "browser",
+    "incremental"
+  ],
+  "author": "Isaac Nygaard",
+  "license": "GPL-3.0",
+  "bugs": {
+    "url": "https://github.com/Azmisov/mutationdiff/issues"
+  },
+  "homepage": "https://azmisov.github.io/mutationdiff/",
+  "devDependencies": {
+    "@babel/preset-env": "^7.20.2",
+    "@rollup/plugin-babel": "^6.0.3",
+    "@rollup/plugin-node-resolve": "^15.0.1",
+    "@rollup/plugin-terser": "^0.1.0",
+    "clean-jsdoc-theme": "^4.1.9",
+    "core-js": "^3.25.5",
+    "rollup": "^3.5.0"
+  },
+  "dependencies": {
+    "node-boundary": "^0.1.1"
+  }
+}

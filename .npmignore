@@ -1,0 +1,7 @@
+docs/*
+docs_theme/*
+rollup.config.mjs
+package-lock.json
+babel.config.json
+.gitignore
+.github/*

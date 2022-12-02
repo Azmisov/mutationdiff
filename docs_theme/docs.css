@@ -1,0 +1,223 @@
+/* tighter tables/text */
+.params td, .params th, .props td, .props th{
+	padding:.5rem 1rem !important;
+}
+p{ margin: 1rem 0 !important; }
+.pre-div{ margin: 1rem 0 !important; }
+article>.description, article>.container-overview>.description{
+	margin:.75rem 0 1rem 0 !important;
+}
+
+/* make details box smaller so it doesn't blend with params box */
+.details{
+	margin-top:.4rem !important;
+	display:table;
+}
+.details dt{
+	min-width: 0 !important;
+}
+.details .details-item-container{
+	padding:.2rem 1rem !important;
+}
+
+/* fix lists */
+article ol, article ul, header ol, header ul{
+	list-style-type: square !important;
+	padding-left:2.25rem !important;
+}
+article ul li, article ol li{
+	padding: .25rem 0 !important;
+}
+
+/* visually separate headers from content */
+article>h3.name, .container-overview>h3.name {
+	display: table;
+	border-left: 5px solid;
+	padding: 0 1.75rem 0 .75rem;
+	margin-top: 1rem;
+	border-radius:.2rem .5rem .5rem .2rem;
+	font-size:1.3rem !important;
+}
+.light .name, .light .name a, .light .method-member-container>strong:first-child, .light .member-item-container>strong:first-child{
+	color: rgb(0, 80, 232) !important;
+}
+.light article>h3.name, .light .container-overview>h3.name{
+	background-color: rgba(34, 79, 255, 0.12);
+}
+.dark .type-signature{
+	color: rgb(255, 99, 91) !important;
+}
+.dark .name, .dark .name a, .dark .method-member-container>strong:first-child, .dark .member-item-container>strong:first-child{
+	color: rgb(238, 137, 63) !important;
+}
+.dark article>h3.name, .dark .container-overview>h3.name{
+	background-color: rgba(238, 137, 63, .1);
+}
+article>:not(h1,h2,h3,h4,.container-overview), .container-overview>:not(h1,h2,h3,h4){
+	margin-left:1rem !important;
+}
+.member-item-container>strong:first-child, .method-member-container>strong:first-child{
+	font-weight:bolder;
+	text-decoration:underline;
+	margin-bottom:.5rem;
+	display:block;
+}
+
+/* REBUILD DESTOP LAYOUT */
+body{
+	display:flex;
+	justify-content: center;
+}
+body.dark{ background:url("./docs_theme/static/binding_dark.webp") repeat #191919;}
+body.light{ background:url("./docs_theme/static/binding_light.webp") repeat #e6e6e6;}
+
+.navbar-container {
+	/* some trickery to get this "inside" the toc container */
+	order:3;
+	position: relative !important;
+	z-index: 40 !important;
+	top: 1.25rem !important;
+	right: auto !important;
+	left: auto !important;
+	width: 0rem !important;
+	height: 0rem !important;
+	padding: 0 !important;
+	display: flex;
+	justify-content: left !important;
+}
+.navbar{
+	display:block !important;
+	padding:0 0 0 1rem !important;
+}
+/* github/npm links; these we just match the rules for the search/theme/text buttons */
+.navbar-item, .navbar-right-item{
+	margin: 0 !important;
+}
+.navbar-right-items{
+	padding: .25rem 0 0 1rem !important;
+}
+.navbar-item>a>svg{
+	height:2rem !important;
+}
+.icon-button, .navbar-item>a{
+	background: 0 0;
+	position: relative;
+	display: inline-flex !important;
+	border: 0;
+	padding:.5rem !important;
+	cursor: pointer;
+	transition: background .3s !important;
+	justify-content: stretch;
+}
+.icon-button svg{
+	height:1.25rem !important;
+	width:1.25rem !important;
+}
+.light .navbar-right-item:hover svg, .light .navbar-item:hover svg{
+	fill:rgb(0, 80, 232);
+}
+.dark .navbar-right-item:hover svg, .dark .navbar-item:hover svg{
+	fill:rgb(238, 137, 63);
+}
+
+.sidebar-container{
+	order:1;
+	position:relative !important;
+	width: auto !important;
+	min-width:14rem;
+	max-width:20rem !important;
+	padding:0 !important;
+}
+.sidebar-items-container{
+	margin-top:1rem !important;
+	padding-bottom:2rem !important;
+}
+.sidebar-section-children-container, .sidebar-section-title{
+	border-radius: 0 !important;
+}
+.dark .sidebar-title:hover{background-color:#252525;}
+.light .sidebar-title:hover{background-color:#eee;}
+.dark .sidebar-container, .dark .toc-container{
+	box-shadow:0 0 1rem rgba(0,0,0,.65);
+	background-color: #222;
+}
+.light .sidebar-container, .light .toc-container{
+	box-shadow:0 0 1rem rgba(0,0,0,.3);
+	background-color: #f7f7f7;
+}
+.sidebar{
+	border-radius: 0 !important;
+	background-color:transparent;
+	overflow-y:auto;
+	height:100vh;
+	padding: 1.5rem 0 0 0 !important;
+}
+
+.body-wrapper{
+	order:2;
+	z-index:20;
+	max-width:60rem !important;
+	min-width:0rem !important;
+	flex-shrink: 1;
+}
+.light .body-wrapper{ background-color:#ffffff; }
+.dark .body-wrapper{ background-color:#1a1a1a; }
+.main-content{
+	padding:0 !important;
+}
+.main-wrapper{
+	padding:1rem 3.5rem !important;
+	width:100% !important; /* needed for code snippet h scrollbar */
+}
+
+.toc-container{
+	order:4;
+	position:relative !important;
+	width:auto !important;
+	min-width:14rem;
+	max-width:20rem !important;
+	top:auto !important;
+	right:auto !important;
+	bottom:auto !important;
+	padding:0 1rem;
+	overflow-x:hidden;
+	overflow-y:auto;
+	height:100vh;
+}
+.toc-content{
+	padding-top:7.5rem !important;
+}
+.toc-content>:first-child{ display: none; }
+.toc-content>:last-child{
+	margin: 0 !important;
+	padding-bottom: 2rem !important;
+}
+
+/* shadow/border so button separates from content more */
+.light #mobile-menu{
+	box-shadow: 0 .1rem .5rem rgba(0,0,0,.2);
+	border: 1px solid rgba(0,0,0,.15);
+}
+.dark #mobile-menu{
+	box-shadow: 0 .1rem .5rem rgba(0,0,0,1);
+	border: 1px solid rgba(255,255,255,.15);
+}
+#mobile-menu.icon-button{
+	padding:.75rem !important;
+}
+.mobile-nav-links{
+	padding:0 2rem !important;
+}
+
+/* fix very small screens */
+@media screen and (max-width: 100em){
+	.toc-container{ display: block !important; }
+}
+@media screen and (max-width: 65em){
+	.toc-container{ display: none !important; }
+	body{ display: block !important; }
+	html{ font-size: 13px; }
+	.main-wrapper{
+		padding:.5rem 1.25rem !important;
+	}
+}
