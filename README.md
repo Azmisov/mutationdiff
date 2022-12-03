@@ -308,7 +308,7 @@ is no post-processing step to "reinterpret" an operation to minimize the number 
 You could implement the Myers' diff algorithm on top of `MutationDiff` results if minimizing node
 movements is necessary, assuming the extra computational cost is worth it.
 
-### Diffing Caveat #2:
+### Diffing Caveat #2
 
 The second caveat arises specifically when using `MutationObserver` with multiple disconnected DOM
 trees. If only one of the trees is being observed, its possible a node insertion could go untracked.

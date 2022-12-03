@@ -1,3 +1,4 @@
+tests/*
 docs/*
 docs_theme/*
 rollup.config.mjs
