@@ -2,9 +2,9 @@
   "name": "mutationdiff",
   "version": "1.0.0",
   "description": "Incremental DOM diffing on real DOM trees utilizing MutationObserver; allows patching, reversion, or range queries",
-  "main": "mutationdiff.mjs",
+  "main": "src/mutationdiff.mjs",
   "scripts": {
-    "docs": "jsdoc --configure docs_theme/jsdoc_config.js",
+    "docs": "jsdoc --configure ./node_modules/clean-jsdoc-theme/preset_jsdoc_config.js",
     "bundle": "rollup --config rollup.config.mjs"
   },
   "browserslist": "> 0.25%, not dead",
@@ -15,6 +15,7 @@
   "keywords": [
     "dom",
     "diff",
+    "diffing",
     "MutationObserver",
     "mutation",
     "node",
@@ -37,7 +38,7 @@
     "@rollup/plugin-babel": "^6.0.3",
     "@rollup/plugin-node-resolve": "^15.0.1",
     "@rollup/plugin-terser": "^0.1.0",
-    "clean-jsdoc-theme": "^4.1.9",
+    "clean-jsdoc-theme": "github:Azmisov/clean-jsdoc-theme",
     "core-js": "^3.25.5",
     "rollup": "^3.5.0"
   },

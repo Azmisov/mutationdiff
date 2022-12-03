@@ -1,5 +1,5 @@
-import { BoundaryFlags, BoundaryRange } from "../node_modules/node-boundary/boundary.mjs";
-import { MutationDiff } from "../mutationdiff.mjs";
+import { MutationDiff } from "../src/mutationdiff.mjs";
+import { BoundaryFlags, BoundaryRange } from "node-boundary";
 
 var output_el, toggle_el;
 var should_stop = null;
@@ -184,6 +184,7 @@ class Tester{
 		this.verbose && console.log("stopping, mutated:\n", this.dom_mutated.pretty_print());
 		this.mutated = this.tracker.mutated(this.root);
 		this.range = this.tracker.range(this.root);
+		this.diff = this.tracker.diff();
 		this.tracker.revert();
 		this.dom_reverted = new CachedDOM(this.root);
 		this.verbose && console.log("stopped, reverted:\n", this.dom_reverted.pretty_print());
@@ -297,11 +298,14 @@ function xoshiro128ss(a, b, c, d) {
  * @param op_count how many node ops to perform as mutations on the initialized DOM
  * @param insert_max max number of nodes to insert in a single operation
  * @param prop_chance [0,1] probability we will modify a property; otherwe we do a node operation
+ * @param flush whether to flush mutation records after each DOM modification; use with inline
+ * 	assertions to localize exactly where a problem occurs
+ * @param synchronize call synchronize on results
  * @param verbose verbose logging
  */
 function randomized_tests({
 	sample_count, element_count, text_count, data_count, init_op_count,
-	op_count, insert_max, prop_chance, verbose, synchronize
+	op_count, insert_max, prop_chance, flush, synchronize, verbose
 }){
 	// random integer, max is exclusive
 	function random_int(max){ return Math.floor(random()*max); }
@@ -446,8 +450,9 @@ function randomized_tests({
 					node[ops[op]](...insert);				
 					if (verbose && started)
 						log_full("op");
-					test.flush();
 				}
+				if (flush)
+					test.flush();
 			}
 			test.stop();
 			log_full("stop");
@@ -538,29 +543,64 @@ window.toggle_running = async function(btn){
 	}
 
 	//* random tests
-	const simple = true;
-	const seed = [-1662060215, -359058769, -1479490946, -13331288];
-	// 109028089, 1407736437, -1505980687, 1467720430
-	// -1877046758, -1782023803, -1226242877, -233807474
-	// -1662060215, -359058769, -1479490946, -13331288
+	// const seed = [712880750, -710502773, -769254584, -299235034];
+	// -1452315043, 1843057675, -2100114604, -2097338946 -> complex
+	// const seed = [837706393, 1717304467, 611471854, 170005688];
+	const seed = null;
 	!seed ? random.randomSeed() : random.setSeed(seed);
-	if (simple){
+
+	// benchmarking
+	if (false){
+		// this is what I'll report for benchmarking, as sort of an "average" case scenario: many
+		// nodes, small operations, small likelihood of running into a SiblingPromise scenario
+		const
+			sample_count = 10000,
+			op_count = 100,
+			prop_chance = .15,
+			insert_max = 3,
+			num_records = sample_count*op_count,
+			// counts each node movement has a distinct op
+			num_ops = num_records*((insert_max+1)*.5*(1-prop_chance) + prop_chance);
+
+		console.profile("benchmark");
 		await randomized_tests({
-			sample_count: !seed ? 100000 : 1,
-			element_count: 50,
-			text_count: 50,
-			data_count: 12,
-			init_op_count: 15,
-			op_count: 50,
-			insert_max: 20,
-			prop_chance: .15,
+			sample_count,
+			element_count: 30,
+			text_count: 20,
+			data_count: 5,
+			init_op_count: 3,
+			op_count,
+			insert_max,
+			prop_chance,
 			verbose: !!seed,
-			synchronize: true
-		})
+			synchronize: true,
+			flush: false
+		});
+		console.profileEnd();
+		console.log("records processed:", num_records);
+		console.log("average mutations:", num_ops);
+		/* results Chrome 108, 2022-12-03:
+			10000 samples
+			1000000 records
+			1850000 ops
+			record 3828.5ms
+				= 261233 per/sec
+			range 191.3ms
+				= 52273 per/sec
+			mutated 20.3ms
+				= 492610 per/sec
+			diff: 93.7ms
+				= 106723 per/sec
+			synchronize 36.3ms
+				= 275482 per/sec
+			revert: 793.9ms
+				= 12596 per/sec
+		*/
 	}
+	// stress testing (less realistic)
 	else{
 		await randomized_tests({
-			sample_count: !seed ? 10000 : 1,
+			sample_count: !seed ? 50000 : 1,
 			element_count: 50,
 			text_count: 50,
 			data_count: 12,
@@ -569,7 +609,8 @@ window.toggle_running = async function(btn){
 			insert_max: 20,
 			prop_chance: .15,
 			verbose: !!seed,
-			synchronize: true
+			synchronize: true,
+			flush: true
 		})
 	}
 	//*/

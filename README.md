@@ -1,27 +1,34 @@
 # mutationdiff
 
-This package provides a `MutationDiff` object which can be used to do incremental DOM diffing on a
-real DOM tree. In addition to getting the diff, you can also patch a DOM given a list of
-differences, revert the DOM to its original state, or query the range where mutations occurred. The
-diffing is designed to take async, batched mutation records from `MutationObserver` as input for
-diff calculations; you can also provide these mutation records in another manner.
+This package allows you to do incremental DOM diffing on a live DOM tree. It is designed to take
+async, batched mutation records from `MutationObserver` as input for diff calculations; but you can
+also report individual mutations manually if desired. In addition to getting the diff, you can also
+patch a DOM given a list of differences, revert the DOM to its original state, or query the range
+where mutations occurred. It can also be used just to summarize and simplify the log of mutations
+given by `MutationObserver`.
 
-How does this differ from *virtual DOM diffing* or other plain DOM diffing libraries?
+How does this package differ from *virtual DOM diffing* or other diffing libraries?
 - it gives the diff of a DOM tree at two points in time, rather than the delta between two different
   DOM trees
 - it doesn't use a virtual DOM, only operating on a live DOM tree
 - it is computationally efficient since it only does calculations on mutated nodes (as
   reported by `MutationObserver` or other method)
-- it is memory efficient since it doesn't need to copy the DOM tree to diff against; only the
-  diff itself needs to be stored in memory
+- it is memory efficient since it doesn't make a copy of the DOM tree to diff against (only the
+  differing nodes and their corresponding diff metadata needs to be stored)
 
-Originally, this library was written to revert browser-made edits to a `contenteditable`
-element; this would allow the edits to be performed from JavaScript in a predictable, crossbrowser
-manner. A naive approach to reversion would be to rewind a log of `MutationRecord`, as suggested
-in the [MDN documentation](https://developer.mozilla.org/en-US/docs/Web/API/MutationObserver/observe#usage_notes).
+Benchmarks in Chrome v108 for a typical use case:
+- Processing a `MutationRecord`: 261k per/sec
+- Retrieving full diff results: 107k per/sec
+- Check if DOM has changed: 493k per/sec
+- Get the extent/range of DOM changes: 52.3k per/sec
+- Revert DOM changes: 12.6k per/sec
+
+Originally, this library was written to revert browser-made edits to a `contenteditable` element. A
+naive approach to reversion would be to rewind a log of `MutationRecord`, as suggested in the [MDN
+documentation](https://developer.mozilla.org/en-US/docs/Web/API/MutationObserver/observe#usage_notes).
 Performing DOM diffing is more work than simply keeping a log, but in exchange we get exact bounds
 for the range of mutations, memory usage is optimal, and reversion can directly place nodes back in
-their origianl positions; it will have better worst-case behavior.
+their original positions; it will have better worst-case behavior.
 
 [API documentation](https://azmisov.github.io/mutationdiff) |
 [npm package](https://www.npmjs.com/package/mutationdiff) |
@@ -42,77 +49,133 @@ as `mutationdiff.min.js`.
 
 ```js
 // an alias is recommended for MutationDiffFlags
-import { MutationDiff, MutationDiffFlags as F} from "mutationdiff";
+import { MutationDiff, MutationDiffObserver, MutationDiffFlags as F } from "mutationdiff";
 ```
 
-If not using a bundler, you'll need to provide a path to the actual source file, e.g.
-`./node_modules/mutationdiff/mutationdiff.mjs`.
+If not using a bundler, you'll need to import from the minified version, which is pre-bundled.
+
+### Quickstart Method Reference
+
+- `record`, `data`, `attribute`, `custom`, `children`: report a DOM mutation
+- `mutated`: check if there are any differences
+- `range`: get the extent of any differences
+- `diff`: get diff results
+- `diff_grouped_children`: group node movement diffs
+- `patch_grouped_children`: apply grouped node movements
+- `revert`: undo any diff
+- `clear`: reset diff tracking
 
 ### Quickstart Example
 
-To get started using `MutationDiff`, consider the following DOM nodes as an example:
+Make sure to check the API documentation for full details.
 
 ```js
-// DOM: <div><span></span></div>, <span id=B></span>, #old text
-const root = document.createElement("div");
-const A = document.createElement("span");
-root.appendChild(A);
-const B = document.createElement("span");
-B.id = "B";
-const B_child_count = B.childNodes.length;
-const txt = document.createTextNode("old text");
+// a small DOM for this example
+const dom = init_dom();
+// create our diff tracking object
+const tracker = new MutationDiff();
 ```
 
-We report any mutations of interest to `MutationDiff` by calling `data`, `attribute`, `custom`, or
-`children` methods. Using a `MutationObserver` is the easiest way to report mutations, but you can
-also call the individual methods yourself if you happen to have some controller logic that all DOM
-modifications go through. There is a `record` method specifically for `MutationRecord` which can
-call these other methods for you. A convenience method `watch` can be used to initialize a
-`MutationObserver`.
+Report any mutations of interest to `MutationDiff` by calling `data`, `attribute`, `custom`, or
+`children` methods. Most likely, you'll want to get mutations using a `MutationObserver`, but you
+could also have some controller logic that all DOM modifications go through.
+
+If you're using `MutationObserver`, there is a helper class `MutationDiffObserver` which can be used
+for simple cases. It will initialize a `MutationObserver` and setup all the hooks to report to
+`MutationDiff` for you. That would look like this:
 
 ```js
-const tracker = new MutationDiff();
-const observer = tracker.watch(root);
+// setup our helper object
+const observer = new MutationDiffObserver(tracker, dom.root);
+// DOM is mutated...
+dom.mutate();
+// custom, user-defined properties always need to be recorded manually
+tracker.custom(dom.B, "child_count", dom.B.childNodes.length, dom.B_old_child_count);
+// flush results and synchronize tracker
+observer.flush();
+// stop observing (optional)
+observer.stop();
+```
+
+If you have more advanced use cases and want to reuse the `MutationObserver`, or filter/process the
+`MutationRecord`s before passing to `MutationDiff`, then you might consider doing the setup
+yourself. That would look like this:
+
+```js
+function handle_records(records){
+	for (const r of records){
+		// custom, user-defined properties always need to be recorded manually
+		if (r.target === dom.B && r.type === "childList")
+			tracker.custom(dom.B, "child_count", dom.B.childNodes.length, dom.B_old_child_count);
+		tracker.record(r);
+		// you could also process records manually and call data, attribute, custom, children
+	}
+}
+// setup the MutationObserver
+const observer = new MutationObserver(handle_records);
+observer.observe(dom.root, {
+	subtree: true,
+	childList: true,
+	attributes: true,
+	attributeOldValue: true,
+	characterData: true,
+	characterDataOldValue: true
+});
+// DOM is mutated...
+dom.mutate();
+// flush MutationObserver
+handle_records(observer.takeRecords());
+// signals to MutationDiff that all mutations have been recorded
+tracker.synchronize();
+// stop observing (optional)
+observer.disconnect();
 ```
 
 Here we just watch a single node, `root`, but in practice you can watch any number of separate DOM
-trees using a single `MutationDiff`. We'll observe all DOM changes, but you could specify a filter
-to ignore attributes or character data changes, for example.
+trees using a single `MutationDiff`. We're also observing all DOM changes, but you could specify a
+filter to ignore attributes or character data changes, for example.
 
-Now the DOM is mutated:
+The `record` method is a convenient helper which calls `data`, `attribute`, and `children` methods
+appropriately for a `MutationRecord`.
 
-```js
-// Mutated DOM: <div><span id=B_modified></span>#new text<span></span></div>
-root.appendChild(B);
-root.appendChild(txt);
-A.remove();
-B.id = "B_modified";
-txt.after(A);
-txt.data = "new text";
-```
+Since `MutationObserver` is async and batched, we need to flush any pending `MutationRecord`s prior
+to reading the results. Note also the call to `synchronize` after flushing; the call to
+`synchronize` is only needed if:
+1. You want to accurately revert or patch DOM trees besides `root` (or the set of root nodes you're
+   observing).
+2. You want to reduce memory usage for property (data, attribute, custom) diff information
 
-Custom, user defined properties can be tracked as well, but they'll need to be recorded manually:
+For our example, if all we wanted to do was revert `root`, the `synchronize` call would not be
+necessary. A more detailed explanation of what `synchronize` does is described in the [Diffing
+Caveat #2](#diffing-caveat-2) and [Diffing Caveat #3](#diffing-caveat-3) sections. When in doubt,
+you can always call `synchronize`, with just a minor increase in computation.
 
-```js
-tracker.custom(B, "child_count", B.childNodes.length, B_child_count);
-```
-
-`MutationObserver` is async and batched, so we need to flush any remaining records to `MutationDiff`
-before reading the diff results:
+The `init_dom` function is defined as:
 
 ```js
-const records = observer.takeRecords();
-// optionally disconnect if we don't want to observe root anymore
-observer.disconnect();
-for (const r of records)
-	tracker.record(r);
-// signals to MutationDiff that all mutations have been recorded
-tracker.synchronize();
-```
+function init_dom(){
+	// Original DOM: <div><span></span></div>, <span id=B></span>, #old text
+	const root = document.createElement("div");
+	const A = document.createElement("span");
+	root.appendChild(A);
+	const B = document.createElement("span");
+	B.id = "B";
+	const B_old_child_count = B.childNodes.length;
+	const txt = document.createTextNode("old text");
 
-Note the call to `synchronize` is optional in many cases. An explanation of what `synchronize` does
-is described in the [Diffing Caveat #2](#diffing-caveat-2) and [Diffing Caveat #3](#diffing-caveat-3)
-sections.
+	function mutate(){
+		// Mutated DOM: <div><span id=B_modified></span>#new text<span></span></div>
+		root.appendChild(B);
+		root.appendChild(txt);
+		A.remove();
+		B.id = "B_modified";
+		txt.after(A);
+		txt.data = "new text";
+	}
+
+	return {root, A, B, txt, B_old_child_count, mutate};
+}
+```
 
 Now we can read the diffing results:
 
@@ -124,7 +187,7 @@ console.log(tracker.range());
 console.log(tracker.diff());
 /* output:
 	Map {
-		B => {
+		dom.B => {
 			attribute: {
 				id: {
 					original: "B",
@@ -139,28 +202,29 @@ console.log(tracker.diff());
 			}
 			children: {
 				mutated: {
-					parent: root,
+					parent: dom.root,
 					prev: null,
-					next: txt
+					next: dom.txt
 				}
 			}
 		},
-		txt => {
+		dom.txt => {
 			data: {
 				original: "old text",
 				mutated: "new text
 			},
 			children: {
 				mutated: {
-					parent: root,
-					prev: B,
-					next: A
+					parent: dom.root,
+					prev: dom.B,
+					next: dom.A
 				}
 			}
 		}
 	}
 */
 ```
+
 Use `mutated` to check if there are any differences and `range` to get the extent of those
 differences. Both take a `root` node argument to optionally confine the results, but in this example
 it was not needed; if we were tracking multiple disconnected DOM trees (e.g. `Node.getRootNode` is
@@ -172,15 +236,18 @@ You'll notice several things from this example:
 - The original node position (inside `children`) for `B` and `txt` is missing; this is
   because the nodes were originally orphaned, having no parent node.
 - `A` does not appear in the diff, since even though it was moved, its relative position with
-  respect to `root` was unchanged.
+  respect to `root` was unchanged. **A node is considered "unchanged" when it is next to one of its
+  original siblings (ignoring any newly inserted siblings in-between), and that sibling is itself
+  unchanged.**
 - Full text diffing is not performed for `data` changes. Only string equality is checked. If full
   text diffing is needed, you can perform it as a post-processing step using a separate text diffing 
   library (e.g. [diff-match-patch](https://github.com/google/diff-match-patch))
 
-See the API documentation for full details on the diff output format.
+As a final note about `synchronize`, if you did not call it, any ill affected nodes will have either
+a missing `mutated` children value, or the `original` `next`/`prev` siblings may be missing.
 
-For `children`, there is another method, `diff_grouped_children`, which will group adjacent children.
-In many cases this can be more useful:
+For `children`, there is another method, `diff_grouped_children`, which will group adjacent node
+movements. In many cases this can be more useful:
 
 ```js
 const grouped = Array.from(tracker.diff_grouped_children(F.MUTATED));
@@ -227,12 +294,10 @@ We could interpret this as a single move of `A` to the back of the list, a movem
 to the front, or a bulk movement of all the nodes. While the first option gives the minimal number
 of node movements, this is not necessarily what `MutationDiff` will return.
 
-`MutationDiff` does incremental diffing, meaning that every call to `children` updates the diff. A
-node is considered unchanged when it is adjacent to one of its correct siblings, and that sibling is
-itself unchanged. When searching for an adjacent sibling, nodes that belong to a different parent
-are ignored. Each call to `children` is treated like a single, atomic operation: we log all node
-removals, then node additions, and then finally perform diffing to check if any of the newly added
-nodes have reverted to their original position.
+`MutationDiff` does incremental diffing, meaning that every call to `children` updates the diff.
+Each call to `children` is treated like a single, atomic operation: we log all node removals, then
+node additions, and then finally perform diffing to check if any of the newly added nodes have
+reverted to their original position.
 
 How the rearrangement example above will be interpreted depends on what mutations were reported to
 `children`, and in what order. The diff given by `MutationDiff` is thus a *true* representation of

@@ -35,9 +35,9 @@ jobs:
       - run: npm i
       # create bundles and deploy on npm
       - run: npm run bundle
-      # - uses: JS-DevTools/npm-publish@v1
-      #   with:
-      #     token: ${{ secrets.NPM_TOKEN }}
+      - uses: JS-DevTools/npm-publish@v1
+        with:
+          token: ${{ secrets.NPM_TOKEN }}
       # build and deploy docs
       - run: npm run docs
       - name: Setup Pages
