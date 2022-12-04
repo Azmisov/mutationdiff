@@ -174,7 +174,7 @@ class MutationDiffObserver{
 	}
 	/** `MutationObserver` will observe descendants of {@link MutationDiffObserver#root|root}, and
 	 * continues observing those descendants even when they are moved to a different part of the DOM
-	 * tree ((see explanation on MDN)[https://developer.mozilla.org/en-US/docs/Web/API/MutationObserver/observe#observation_follows_nodes_when_disconnected].
+	 * tree ([see explanation on MDN](https://developer.mozilla.org/en-US/docs/Web/API/MutationObserver/observe#observation_follows_nodes_when_disconnected)).
 	 * This method will reattach the `MutationObserver` so that it is only observing the current
 	 * descendants of {@link MutationDiffObserver#root|root}.
 	 */
