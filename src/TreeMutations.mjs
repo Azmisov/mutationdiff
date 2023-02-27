@@ -318,7 +318,7 @@ export default class TreeMutations{
 			this.#revert_check([mn], parent, resolved, flags & 1 ? mn : undefined, flags & 2 ? mn : undefined);
 		}
 
-		//* For debugging:
+		/* For debugging:
 		try{
 			this.#assert_valid_state();
 		} catch(err){
@@ -425,7 +425,7 @@ export default class TreeMutations{
 				}
 				this.mutated.add(mn);
 			}
-			//* For debugging
+			/* For debugging
 			if (!node.parentNode){
 				if (mn.mutated)
 					throw Error("mutated should be null")
@@ -491,7 +491,7 @@ export default class TreeMutations{
 		for (const {prev, next, parent} of pair_hints)
 			this.#revert_check([], parent, null, prev, next);
 
-		//* For debugging:
+		/* For debugging:
 		try{
 			this.#assert_valid_state(true);
 		} catch(err){
@@ -683,7 +683,7 @@ export default class TreeMutations{
 		}
 	}
 
-	//* For debugging only
+	/* For debugging only
 	#assert_valid_state(synchronized = false){
 		const promises = new Map();
 		// check SiblingIndex's
