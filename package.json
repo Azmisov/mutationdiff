@@ -1,6 +1,6 @@
 {
   "name": "mutationdiff",
-  "version": "1.0.3",
+  "version": "1.0.4",
   "description": "Incremental DOM diffing on real DOM trees utilizing MutationObserver; allows patching, reversion, or range queries",
   "main": "src/mutationdiff.mjs",
   "scripts": {
@@ -28,7 +28,7 @@
     "incremental"
   ],
   "author": "Isaac Nygaard",
-  "license": "LGPL-3.0-or-later",
+  "license": "LGPL-3.0",
   "bugs": {
     "url": "https://github.com/Azmisov/mutationdiff/issues"
   },
